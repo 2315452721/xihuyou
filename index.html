@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>西湖旅游 - 景点介绍 & 互动小游戏 & 路线规划</title>
+    <!-- 引入Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入Font Awesome图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        westlake: {
+                            primary: '#165DFF',
+                            light: '#E8F3FF',
+                            dark: '#0E42B3',
+                            green: '#36B37E',
+                            yellow: '#FFAB00'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .route-card {
+                @apply bg-white rounded-xl shadow-md p-4 border-l-4 border-westlake-primary hover:shadow-lg transition-shadow;
+            }
+            .spot-checkbox {
+                @apply w-5 h-5 rounded border-2 border-gray-300 text-westlake-primary focus:ring-westlake-primary/50 cursor-pointer;
+            }
+            .mode-btn {
+                @apply px-4 py-2 rounded-l-lg bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer text-sm font-medium;
+            }
+            .mode-btn.active {
+                @apply bg-westlake-primary text-white hover:bg-westlake-dark;
+            }
+            .step-item {
+                @apply flex items-center py-2 border-b border-gray-100 last:border-0;
+            }
+            .step-number {
+                @apply w-8 h-8 rounded-full bg-westlake-primary text-white flex items-center justify-center mr-3 flex-shrink-0;
+            }
+            .distance-tag {
+                @apply text-xs bg-westlake-light text-westlake-dark px-2 py-1 rounded-full ml-2;
+            }
+            .time-tag {
+                @apply text-xs bg-westlake-yellow/20 text-westlake-yellow px-2 py-1 rounded-full ml-2;
+            }
+            /* 景点列表悬停效果 */
+            .spot-label:hover {
+                @apply bg-westlake-light/50 rounded-lg p-1 transition-colors;
+            }
+        }
+    </style>
+
+    <style>
+        /* 全局基础样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "微软雅黑", "PingFang SC", "Microsoft YaHei", Helvetica Neue, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            padding-bottom: 50px;
+        }
+
+        /* 顶部导航栏 */
+        .navbar {
+            background-color: #2c5a8e;
+            padding: 15px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo i {
+            margin-right: 8px;
+            font-size: 22px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 2px;
+        }
+
+        .tab-btn {
+            padding: 8px 20px;
+            background-color: rgba(255,255,255,0.1);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            background-color: white;
+            color: #2c5a8e;
+            font-weight: 600;
+        }
+
+        .tab-btn:hover:not(.active) {
+            background-color: rgba(255,255,255,0.2);
+        }
+
+        /* 移动端导航适配 */
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .nav-tabs {
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            .tab-btn {
+                padding: 6px 15px;
+                font-size: 14px;
+            }
+        }
+
+        /* 内容容器 */
+        .content-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px 10px;
+        }
+
+        /* 标签页内容 - 默认隐藏 */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* ==================== 西湖介绍模块样式 ==================== */
+        /* 页面标题：加载淡入动画 */
+        .page-header {
+            text-align: center;
+            padding: 40px 0;
+            animation: fadeIn 1.5s ease-in-out;
+        }
+
+        .page-header h1 {
+            color: #2d6a4f;
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+
+        .page-header p {
+            color: #52b788;
+            font-size: 18px;
+        }
+
+        /* 景点容器 */
+        .westlake-spots {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 25px;
+        }
+
+        /* 景点卡片：悬停动画核心 */
+        .spot-card {
+            width: 300px;
+            background: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+            transition: all 0.4s ease;
+        }
+
+        /* 卡片悬停效果：轻微上浮+放大+阴影加深 */
+        .spot-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 8px 16px rgba(45,106,79,0.2);
+        }
+
+        .spot-card img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .spot-card:hover img {
+            transform: scale(1.1);
+        }
+
+        .spot-info {
+            padding: 20px;
+        }
+
+        .spot-info h3 {
+            color: #2d6a4f;
+            font-size: 20px;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, #2d6a4f, #52b788);
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+
+        .spot-info p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        /* ==================== 小游戏模块样式 ==================== */
+        /* 游戏标题：淡入动画 */
+        .game-title {
+            text-align: center;
+            margin-bottom: 30px;
+            animation: titleFadeIn 2s ease-in-out;
+        }
+
+        .game-title h1 {
+            color: #2c5a8e;
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+
+        .game-title p {
+            color: #4a7bb7;
+            font-size: 18px;
+        }
+
+        /* 游戏信息面板 */
+        .game-info {
+            max-width: 800px;
+            margin: 0 auto 20px;
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
+        .game-info .score, .game-info .timer {
+            font-size: 16px;
+            color: #2c5a8e;
+            font-weight: 600;
+        }
+
+        /* 游戏卡片容器 */
+        .game-container {
+            max-width: 800px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            padding: 0 10px;
+        }
+
+        /* 卡片样式：核心翻转动画 */
+        .card {
+            aspect-ratio: 3/2;
+            perspective: 1000px;
+            cursor: pointer;
+        }
+
+        .card-inner {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transition: transform 0.6s ease;
+            transform-style: preserve-3d;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+
+        /* 卡片翻转状态 */
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        /* 卡片匹配成功状态：缩放+透明动画 */
+        .card.matched .card-inner {
+            animation: matchSuccess 0.8s ease-in-out;
+            pointer-events: none;
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        /* 卡片背面（默认显示） */
+        .card-back {
+            background: linear-gradient(135deg, #2c5a8e, #4a7bb7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 24px;
+        }
+
+        /* 卡片正面（翻转后显示，景点图片） */
+        .card-front {
+            transform: rotateY(180deg);
+        }
+
+        .card-front img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* 通关提示弹窗 */
+        .success-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+        }
+
+        .modal-content {
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            animation: modalPopup 0.5s ease-in-out;
+        }
+
+        .modal-content h2 {
+            color: #2c5a8e;
+            margin-bottom: 15px;
+        }
+
+        .modal-content p {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+
+        .modal-content button {
+            padding: 10px 25px;
+            background: #2c5a8e;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s ease;
+        }
+
+        .modal-content button:hover {
+            background: #1e4369;
+        }
+
+        /* ==================== 动画关键帧定义 ==================== */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes titleFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes matchSuccess {
+            0% {
+                transform: rotateY(180deg) scale(1);
+            }
+            50% {
+                transform: rotateY(180deg) scale(1.05);
+            }
+            100% {
+                transform: rotateY(180deg) scale(1);
+                opacity: 0.9;
+            }
+        }
+
+        @keyframes modalPopup {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* ==================== 响应式调整 ==================== */
+        @media (max-width: 768px) {
+            .game-container {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .game-title h1, .page-header h1 {
+                font-size: 28px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .game-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .game-info {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <i class="fa fa-leaf"></i>
+                西湖旅游
+            </div>
+            <div class="nav-tabs">
+                <button class="tab-btn active" data-tab="intro">西湖介绍</button>
+                <button class="tab-btn" data-tab="game">配对小游戏</button>
+                <button class="tab-btn" data-tab="route">路线规划</button>
+				<a href="./youxihu.html"><button class="tab-btn" ">人间天堂</button></a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容容器 -->
+    <div class="content-container">
+        <!-- 1. 西湖介绍标签页 -->
+        <div id="intro" class="tab-content active">
+            <!-- 页面标题（带加载淡入动画） -->
+            <div class="page-header">
+                <h1>西湖旅游 · 人间天堂</h1>
+                <p>欲把西湖比西子，淡妆浓抹总相宜</p>
+            </div>
+
+            <!-- 景点卡片（带悬停动画） -->
+            <div class="westlake-spots">
+                <!-- 景点1：三潭印月 -->
+                <div class="spot-card">
+                    <img src="./西湖图片/85b46d23fc114a.jpg" alt="三潭印月">
+                    <div class="spot-info">
+                        <h3>三潭印月</h3>
+                        <p>西湖十景之一，被誉为"西湖第一胜境"，是西湖中最大的岛屿，夜幕降临时三潭映月的美景堪称一绝。</p>
+                    </div>
+                </div>
+
+                <!-- 景点2：苏堤春晓 -->
+                <div class="spot-card">
+                    <img src="./西湖图片/OIP-C.jpg" alt="苏堤春晓">
+                    <div class="spot-info">
+                        <h3>苏堤春晓</h3>
+                        <p>西湖十景之首，由苏东坡主持修建，春日里桃花盛开，杨柳依依，漫步堤上如入画中。</p>
+                    </div>
+                </div>
+
+                <!-- 景点3：雷峰夕照 -->
+                <div class="spot-card">
+                    <img src="./西湖图片/1-24051F91P0Y5.jpg" alt="雷峰夕照">
+                    <div class="spot-info">
+                        <h3>雷峰夕照</h3>
+                        <p>以雷峰塔为核心景观，傍晚时分夕阳映照塔身，霞光满天，是西湖标志性的日落打卡地。</p>
+                    </div>
+                </div>
+
+                <!-- 新增更多景点，保持一致性 -->
+                <div class="spot-card">
+                    <img src="./西湖图片/R-C.jpg" alt="断桥残雪">
+                    <div class="spot-info">
+                        <h3>断桥残雪</h3>
+                        <p>西湖十景之一，冬雪初霁时，桥阳面冰雪消融，阴面仍有残雪，形成"断桥不断"的独特景观。</p>
+                    </div>
+                </div>
+
+                <div class="spot-card">
+                    <img src="./西湖图片/1-240522194500T1.jpg" alt="平湖秋月">
+                    <div class="spot-info">
+                        <h3>平湖秋月</h3>
+                        <p>临湖筑有御书楼，楼前平台挑出湖面，中秋之夜在此赏月，皓月当空，湖水如镜，景色绝佳。</p>
+                    </div>
+                </div>
+
+                <div class="spot-card">
+                    <img src="./西湖图片/1-240521222940105.jpg" alt="曲院风荷">
+                    <div class="spot-info">
+                        <h3>曲院风荷</h3>
+                        <p>以夏日赏荷为主题，荷塘连片，清风拂过，荷香四溢，是西湖夏季最具代表性的景观。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. 配对小游戏标签页 -->
+        <div id="game" class="tab-content">
+            <!-- 游戏标题 -->
+            <div class="game-title">
+                <h1>西湖景点 · 记忆配对消消乐</h1>
+                <p>翻转卡片，找到相同的西湖景点即可配对成功！</p>
+            </div>
+
+            <!-- 游戏信息面板 -->
+            <div class="game-info">
+                <div class="score">当前得分：<span id="score">0</span></div>
+                <div class="timer">游戏时长：<span id="timer">0</span> 秒</div>
+            </div>
+
+            <!-- 游戏卡片容器 -->
+            <div class="game-container" id="gameContainer"></div>
+
+            <!-- 通关提示弹窗 -->
+            <div class="success-modal" id="successModal">
+                <div class="modal-content">
+                    <h2>恭喜你！通关成功！</h2>
+                    <p>你的最终得分：<span id="finalScore">0</span></p>
+                    <p>游戏用时：<span id="finalTimer">0</span> 秒</p>
+                    <button id="restartBtn">重新开始游戏</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. 路线规划标签页 -->
+        <div id="route" class="tab-content">
+            <div class="container mx-auto px-4 py-8 max-w-6xl">
+                <!-- 标题区域（西湖全景图背景） -->
+                <div class="text-center mb-8 relative rounded-xl overflow-hidden">
+                    <div class="absolute inset-0 bg-[url('https://picsum.photos/id/152/1920/300')] bg-cover bg-center opacity-20 -z-10"></div>
+                    <h1 class="text-[clamp(1.8rem,4vw,2.5rem)] font-bold text-gray-800 mb-2">西湖十景 · 智能路线规划</h1>
+                    <p class="text-gray-600">选择你想去的景点，生成专属游览路线</p>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- 左侧：景点选择区 -->
+                    <div class="lg:col-span-1">
+                        <div class="bg-white rounded-xl shadow-sm p-5">
+                            <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                                <i class="fas fa-map-marker-alt text-westlake-primary mr-2"></i>
+                                选择游览景点
+                            </h2>
+                            
+                            <!-- 游览模式选择 -->
+                            <div class="flex mb-4 rounded-lg overflow-hidden border border-gray-200">
+                                <div class="mode-btn active" data-mode="walk">
+                                    <i class="fas fa-walking mr-1"></i> 步行
+                                </div>
+                                <div class="mode-btn rounded-r-lg" data-mode="bike">
+                                    <i class="fas fa-bicycle mr-1"></i> 骑行
+                                </div>
+                            </div>
+                            
+                            <!-- 景点列表 -->
+                            <div class="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                                <!-- 苏堤春晓 -->
+                                <label class="flex items-center justify-between cursor-pointer spot-label">
+                                    <span class="flex items-center relative pl-8">
+                                        <i class="fas fa-tree text-westlake-primary mr-2 absolute left-0"></i>
+                                        苏堤春晓
+                                    </span>
+                                    <input type="checkbox" class="spot-checkbox" data-spot="suti" data-distance="0">
+                                </label>
+                                
+                                <!-- 断桥残雪 -->
+                                <label class="flex items-center justify-between cursor-pointer spot-label">
+                                    <span class="flex items-center relative pl-8">
+                                        <i class="fas fa-snowflake text-westlake-primary mr-2 absolute left-0"></i>
+                                        断桥残雪
+                                    </span>
+                                    <input type="checkbox" class="spot-checkbox" data-spot="duanqiao" data-distance="1.2">
+                                </label>
+                                
+                                <!-- 雷峰夕照 -->
+                                <label class="flex items-center justify-between cursor-pointer spot-label">
+                                    <span class="flex items-center relative pl-8">
+                                        <i class="fas fa-sun text-westlake-primary mr-2 absolute left-0"></i>
+                                        雷峰夕照
+                                    </span>
+                                    <input type="checkbox" class="spot-checkbox" data-spot="leifeng" data-distance="2.5">
+                                </label>
+                                
+                                <!-- 三潭印月 -->
+                                <label class="flex items-center justify-between cursor-pointer spot-label">
+                                    <span class="flex items-center relative pl-8">
+                                        <i class="fas fa-moon text-westlake-primary mr-2 absolute left-0"></i>
+                                        三潭印月
+                                    </span>
+                                    <input type="checkbox" class="spot-checkbox" data-spot="santan" data-distance="1.8">
+                                </label>
+                                
+                                <!-- 花港观鱼 -->
+                                <label class="flex items-center justify-between cursor-pointer spot-label">
+                                    <span class="flex items-center relative pl-8">
+                                        <i class="fas fa-fish text-westlake-primary mr-2 absolute left-0"></i>
+                                        花港观鱼
+                                    </span>
+                                    <input type="checkbox" class="spot-checkbox" data-spot="huagang" data-distance="1.5">
+                                </label>
+                                
+                                <!-- 柳浪闻莺 -->
+                                <label class="flex items-center justify-between cursor-pointer spot-label">
+                                    <span class="flex items-center relative pl-8">
+                                        <i class="fas fa-feather text-westlake-primary mr-2 absolute left-0"></i>
+                                        柳浪闻莺
+                                    </span>
+                                    <input type="checkbox" class="spot-checkbox" data-spot="liulang" data-distance="0.8">
+                                </label>
+                                
+                                <!-- 平湖秋月 -->
+                                <label class="flex items-center justify-between cursor-pointer spot-label">
+                                    <span class="flex items-center relative pl-8">
+                                        <i class="fas fa-water text-westlake-primary mr-2 absolute left-0"></i>
+                                        平湖秋月
+                                    </span>
+                                    <input type="checkbox" class="spot-checkbox" data-spot="pinghu" data-distance="1.0">
+                                </label>
+                                
+                                <!-- 曲院风荷 -->
+                                <label class="flex items-center justify-between cursor-pointer spot-label">
+                                    <span class="flex items-center relative pl-8">
+                                        <i class="fas fa-leaf text-westlake-primary mr-2 absolute left-0"></i>
+                                        曲院风荷
+                                    </span>
+                                    <input type="checkbox" class="spot-checkbox" data-spot="quyuan" data-distance="1.3">
+                                </label>
+                                
+                                <!-- 双峰插云 -->
+                                <label class="flex items-center justify-between cursor-pointer spot-label">
+                                    <span class="flex items-center relative pl-8">
+                                        <i class="fas fa-mountain text-westlake-primary mr-2 absolute left-0"></i>
+                                        双峰插云
+                                    </span>
+                                    <input type="checkbox" class="spot-checkbox" data-spot="shuangfeng" data-distance="2.1">
+                                </label>
+                                
+                                <!-- 南屏晚钟 -->
+                                <label class="flex items-center justify-between cursor-pointer spot-label">
+                                    <span class="flex items-center relative pl-8">
+                                        <i class="fas fa-bell text-westlake-primary mr-2 absolute left-0"></i>
+                                        南屏晚钟
+                                    </span>
+                                    <input type="checkbox" class="spot-checkbox" data-spot="nanping" data-distance="1.9">
+                                </label>
+                            </div>
+                            
+                            <!-- 操作按钮 -->
+                            <div class="flex gap-3 mt-5">
+                                <button id="generateRoute" class="flex-1 bg-westlake-primary text-white py-2 rounded-lg hover:bg-westlake-dark transition-colors flex items-center justify-center">
+                                    <i class="fas fa-route mr-2"></i> 生成路线
+                                </button>
+                                <button id="clearAll" class="px-4 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition-colors">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 右侧：路线展示区 -->
+                    <div class="lg:col-span-2">
+                        <div class="route-card h-full">
+                            <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                                <i class="fas fa-route text-westlake-primary mr-2"></i>
+                                你的专属游览路线
+                            </h2>
+                            
+                            <!-- 路线信息摘要 -->
+                            <div id="routeSummary" class="hidden mb-4 p-3 bg-westlake-light rounded-lg">
+                                <div class="flex flex-wrap items-center gap-4">
+                                    <div>
+                                        <span class="text-sm text-gray-600">总距离：</span>
+                                        <span id="totalDistance" class="font-bold text-westlake-dark">0 km</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm text-gray-600">预计耗时：</span>
+                                        <span id="totalTime" class="font-bold text-westlake-dark">0 分钟</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm text-gray-600">游览模式：</span>
+                                        <span id="travelMode" class="font-bold text-westlake-dark">步行</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 路线步骤列表 -->
+                            <div id="routeSteps" class="space-y-2">
+                                <!-- 初始提示（三潭印月背景） -->
+                                <div class="text-center text-gray-500 py-10 relative rounded-lg overflow-hidden">
+                                    <div class="absolute inset-0 bg-[url('https://picsum.photos/id/292/1920/400')] bg-cover bg-center opacity-10 -z-10"></div>
+                                    <i class="fas fa-map-signs text-4xl mb-3 text-gray-300"></i>
+                                    <p>选择景点后点击「生成路线」按钮</p>
+                                    <p class="text-sm mt-1">最多选择8个景点，系统将生成最优游览路线</p>
+                                </div>
+                            </div>
+                            
+                            <!-- 路线预览图（西湖全景图） -->
+                            <div id="routeMapPreview" class="hidden mt-5 rounded-lg overflow-hidden h-48 bg-gray-100 border border-gray-200">
+                                <img src="https://picsum.photos/id/152/1920/1080" alt="西湖游览路线图" class="w-full h-full object-cover" onerror="this.src='https://picsum.photos/id/292/1920/1080'">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 底部小贴士（西湖绿植背景） -->
+                <div class="mt-6 bg-white rounded-lg p-4 text-sm text-gray-600 shadow-sm relative overflow-hidden">
+                    <div class="absolute inset-0 bg-[url('https://picsum.photos/id/431/1920/100')] bg-cover bg-center opacity-10 -z-10"></div>
+                    <i class="fas fa-info-circle text-westlake-primary mr-2"></i>
+                    <span>小贴士：西湖十景分布在西湖周边，建议单次游览3-5个景点，步行速度约4km/h，骑行速度约10km/h。春季苏堤春晓、夏季曲院风荷、秋季平湖秋月、冬季断桥残雪为最佳观赏时节。</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 标签页切换逻辑 ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取所有标签按钮和内容
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            // 为每个标签按钮绑定点击事件
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // 移除所有激活状态
+                    tabBtns.forEach(b => b.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
+
+                    // 激活当前标签
+                    this.classList.add('active');
+                    const tabId = this.dataset.tab;
+                    document.getElementById(tabId).classList.add('active');
+
+                    // 如果切换到游戏标签，确保游戏初始化
+                    if (tabId === 'game' && !window.gameInitialized) {
+                        initGame();
+                        window.gameInitialized = true;
+                    }
+                });
+            });
+
+            // ==================== 小游戏核心逻辑 ====================
+            // 西湖景点数据
+            const westLakeSpots = [
+                { id: 1, name: "三潭印月", img: "./西湖图片/85b46d23fc114a.jpg" },
+                { id: 2, name: "苏堤春晓", img: "./西湖图片/OIP-C.jpg" },
+                { id: 3, name: "雷峰夕照", img: "./西湖图片/1-24051F91P0Y5.jpg" },
+                { id: 4, name: "断桥残雪", img: "./西湖图片/R-C.jpg" },
+                { id: 5, name: "平湖秋月", img: "./西湖图片/1-240522194500T1.jpg" },
+                { id: 6, name: "柳浪闻莺", img: "./西湖图片/R-C (1).jpg" },
+                { id: 7, name: "曲院风荷", img: "./西湖图片/1-240521222940105.jpg" },
+                { id: 8, name: "南屏晚钟", img: "./西湖图片/R-C (2).jpg" }
+            ];
+
+            // 游戏全局变量
+            let gameCards = [];
+            let flippedCards = [];
+            let score = 0;
+            let timer = 0;
+            let timerInterval = null;
+            let isProcessing = false;
+            window.gameInitialized = false;
+
+            // 初始化游戏
+            function initGame() {
+                // 重置游戏状态
+                score = 0;
+                timer = 0;
+                flippedCards = [];
+                isProcessing = false;
+                document.getElementById("score").textContent = score;
+                document.getElementById("timer").textContent = timer;
+
+                // 重置计时器
+                if (timerInterval) {
+                    clearInterval(timerInterval);
+                }
+                timerInterval = setInterval(() => {
+                    timer++;
+                    document.getElementById("timer").textContent = timer;
+                }, 1000);
+
+                // 生成重复的景点卡片并打乱顺序
+                gameCards = [...westLakeSpots, ...westLakeSpots].sort(() => Math.random() - 0.5);
+
+                // 渲染卡片
+                const gameContainer = document.getElementById("gameContainer");
+                gameContainer.innerHTML = "";
+                gameCards.forEach((spot, index) => {
+                    const card = document.createElement("div");
+                    card.className = "card";
+                    card.dataset.id = spot.id;
+                    card.dataset.index = index;
+                    card.innerHTML = `
+                        <div class="card-inner">
+                            <div class="card-back">
+                                <span>西湖</span>
+                            </div>
+                            <div class="card-front">
+                                <img src="${spot.img}" alt="${spot.name}">
+                            </div>
+                        </div>
+                    `;
+                    // 绑定卡片点击事件
+                    card.addEventListener("click", () => flipCard(card));
+                    gameContainer.appendChild(card);
+                });
+            }
+
+            // 翻转卡片逻辑
+            function flipCard(card) {
+                // 防止重复点击
+                if (isProcessing || card.classList.contains("flipped") || card.classList.contains("matched")) {
+                    return;
+                }
+
+                // 翻转卡片
+                card.classList.add("flipped");
+                flippedCards.push(card);
+
+                // 如果翻转了2张卡片，进行配对判断
+                if (flippedCards.length === 2) {
+                    isProcessing = true;
+                    const card1 = flippedCards[0];
+                    const card2 = flippedCards[1];
+
+                    // 判断是否配对成功
+                    if (card1.dataset.id === card2.dataset.id) {
+                        // 配对成功
+                        setTimeout(() => {
+                            card1.classList.add("matched");
+                            card2.classList.add("matched");
+                            score += 10;
+                            document.getElementById("score").textContent = score;
+                            flippedCards = [];
+                            isProcessing = false;
+                            checkGameSuccess();
+                        }, 600);
+                    } else {
+                        // 配对失败
+                        setTimeout(() => {
+                            card1.classList.remove("flipped");
+                            card2.classList.remove("flipped");
+                            flippedCards = [];
+                            isProcessing = false;
+                        }, 1000);
+                    }
+                }
+            }
+
+            // 判断游戏是否通关
+            function checkGameSuccess() {
+                const allCards = document.querySelectorAll(".card");
+                const matchedCards = document.querySelectorAll(".card.matched");
+                if (allCards.length === matchedCards.length) {
+                    clearInterval(timerInterval);
+                    document.getElementById("finalScore").textContent = score;
+                    document.getElementById("finalTimer").textContent = timer;
+                    document.getElementById("successModal").style.display = "flex";
+                }
+            }
+
+            // 重新开始游戏
+            document.getElementById("restartBtn").addEventListener("click", () => {
+                document.getElementById("successModal").style.display = "none";
+                initGame();
+            });
+
+            // ==================== 路线规划核心逻辑 ====================
+            // 景点数据（包含名称和相邻景点距离）
+            const spotData = {
+                suti: { name: "苏堤春晓", order: 1 },
+                duanqiao: { name: "断桥残雪", order: 2 },
+                leifeng: { name: "雷峰夕照", order: 3 },
+                santan: { name: "三潭印月", order: 4 },
+                huagang: { name: "花港观鱼", order: 5 },
+                liulang: { name: "柳浪闻莺", order: 6 },
+                pinghu: { name: "平湖秋月", order: 7 },
+                quyuan: { name: "曲院风荷", order: 8 },
+                shuangfeng: { name: "双峰插云", order: 9 },
+                nanping: { name: "南屏晚钟", order: 10 }
+            };
+            
+            // 速度配置（km/h）
+            const speedConfig = {
+                walk: 4,
+                bike: 10
+            };
+            
+            // DOM元素
+            const generateBtn = document.getElementById('generateRoute');
+            const clearBtn = document.getElementById('clearAll');
+            const modeBtns = document.querySelectorAll('.mode-btn');
+            const spotCheckboxes = document.querySelectorAll('.spot-checkbox');
+            const routeSteps = document.getElementById('routeSteps');
+            const routeSummary = document.getElementById('routeSummary');
+            const totalDistance = document.getElementById('totalDistance');
+            const totalTime = document.getElementById('totalTime');
+            const travelMode = document.getElementById('travelMode');
+            const routeMapPreview = document.getElementById('routeMapPreview');
+            
+            let currentMode = 'walk';
+            
+            // 切换游览模式
+            modeBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    modeBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentMode = btn.dataset.mode;
+                    travelMode.textContent = currentMode === 'walk' ? '步行' : '骑行';
+                    
+                    // 如果已有路线，重新计算时间
+                    if (routeSummary.classList.contains('block')) {
+                        updateRouteCalculation();
+                    }
+                });
+            });
+            
+            // 生成路线
+            generateBtn.addEventListener('click', () => {
+                // 获取选中的景点
+                const selectedSpots = Array.from(spotCheckboxes)
+                    .filter(checkbox => checkbox.checked)
+                    .map(checkbox => ({
+                        id: checkbox.dataset.spot,
+                        name: spotData[checkbox.dataset.spot].name,
+                        order: spotData[checkbox.dataset.spot].order,
+                        distance: parseFloat(checkbox.dataset.distance)
+                    }));
+                
+                // 验证选择数量
+                if (selectedSpots.length === 0) {
+                    alert('请至少选择一个景点！');
+                    return;
+                }
+                
+                if (selectedSpots.length > 8) {
+                    alert('最多只能选择8个景点，建议单次游览3-5个景点体验更佳！');
+                    return;
+                }
+                
+                // 按地理位置排序（模拟最优路线）
+                const sortedSpots = selectedSpots.sort((a, b) => a.order - b.order);
+                
+                // 渲染路线
+                renderRoute(sortedSpots);
+                
+                // 更新路线计算
+                updateRouteCalculation(sortedSpots);
+                
+                // 显示路线摘要和预览
+                routeSummary.classList.remove('hidden');
+                routeSummary.classList.add('block');
+                routeMapPreview.classList.remove('hidden');
+            });
+            
+            // 渲染路线步骤
+            function renderRoute(spots) {
+                routeSteps.innerHTML = '';
+                
+                spots.forEach((spot, index) => {
+                    // 计算当前段的距离和时间
+                    const segmentDistance = index === 0 ? 0 : spot.distance;
+                    const segmentTime = Math.round((segmentDistance / speedConfig[currentMode]) * 60);
+                    
+                    const stepItem = document.createElement('div');
+                    stepItem.className = 'step-item';
+                    
+                    // 为每个步骤添加对应景点的高清背景图
+                    const stepBgImage = getSpotBackgroundImage(spot.id);
+                    stepItem.style.background = `url(${stepBgImage}) center/cover no-repeat`;
+                    stepItem.style.backgroundSize = '100% 100%';
+                    stepItem.style.backgroundBlendMode = 'overlay';
+                    stepItem.style.backgroundColor = 'rgba(255, 255, 255, 0.85)';
+                    
+                    stepItem.innerHTML = `
+                        <div class="step-number">${index + 1}</div>
+                        <div class="flex-1">
+                            <div class="font-medium">${spot.name}</div>
+                            ${index > 0 ? `
+                                <div class="text-xs text-gray-500 mt-1">
+                                    从${spots[index-1].name}前往
+                                    <span class="distance-tag">${segmentDistance} km</span>
+                                    <span class="time-tag">约${segmentTime} 分钟</span>
+                                </div>
+                            ` : '<div class="text-xs text-gray-500 mt-1">起点</div>'}
+                        </div>
+                    `;
+                    
+                    routeSteps.appendChild(stepItem);
+                });
+                
+                // 添加终点提示
+                const endItem = document.createElement('div');
+                endItem.className = 'mt-4 p-3 bg-green-50 rounded-lg text-center text-green-700';
+                endItem.innerHTML = `<i class="fas fa-flag-checkered mr-2"></i> 游览路线结束，祝您游玩愉快！`;
+                routeSteps.appendChild(endItem);
+            }
+            
+            // 获取景点对应的高清背景图
+            function getSpotBackgroundImage(spotId) {
+                const spotImages = {
+                    suti: 'https://picsum.photos/id/152/1920/1080',    // 苏堤春晓（西湖全景）
+                    duanqiao: 'https://picsum.photos/id/185/1920/1080',  // 断桥残雪（高清）
+                    leifeng: 'https://picsum.photos/id/237/1920/1080',   // 雷峰夕照（高清）
+                    santan: 'https://picsum.photos/id/292/1920/1080',    // 三潭印月（高清）
+                    huagang: 'https://picsum.photos/id/431/1920/1080',   // 花港观鱼（高清）
+                    liulang: 'https://picsum.photos/id/164/1920/1080',   // 柳浪闻莺（高清）
+                    pinghu: 'https://picsum.photos/id/185/1920/1080',   // 平湖秋月（高清）
+                    quyuan: 'https://picsum.photos/id/237/1920/1080',   // 曲院风荷（高清）
+                    shuangfeng: 'https://picsum.photos/id/292/1920/1080',// 双峰插云（高清）
+                    nanping: 'https://picsum.photos/id/431/1920/1080'    // 南屏晚钟（高清）
+                };
+                
+                return spotImages[spotId] || 'https://picsum.photos/id/152/1920/1080';
+            }
+            
+            // 更新路线计算（总距离和总时间）
+            function updateRouteCalculation(spots = null) {
+                let selectedSpots = spots;
+                
+                if (!selectedSpots) {
+                    // 重新获取选中的景点
+                    selectedSpots = Array.from(spotCheckboxes)
+                        .filter(checkbox => checkbox.checked)
+                        .map(checkbox => ({
+                            distance: parseFloat(checkbox.dataset.distance)
+                        }));
+                }
+                
+                // 计算总距离（排除第一个景点的距离）
+                const sumDistance = selectedSpots.reduce((sum, spot, index) => {
+                    return index === 0 ? sum : sum + spot.distance;
+                }, 0);
+                
+                // 计算总时间
+                const sumTime = Math.round((sumDistance / speedConfig[currentMode]) * 60);
+                
+                // 更新显示
+                totalDistance.textContent = `${sumDistance.toFixed(1)} km`;
+                totalTime.textContent = `${sumTime} 分钟`;
+                travelMode.textContent = currentMode === 'walk' ? '步行' : '骑行';
+            }
+            
+            // 清空所有选择
+            clearBtn.addEventListener('click', () => {
+                spotCheckboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+                
+                // 重置路线显示
+                routeSteps.innerHTML = `
+                    <div class="text-center text-gray-500 py-10 relative rounded-lg overflow-hidden">
+                        <div class="absolute inset-0 bg-[url('https://picsum.photos/id/292/1920/400')] bg-cover bg-center opacity-10 -z-10"></div>
+                        <i class="fas fa-map-signs text-4xl mb-3 text-gray-300"></i>
+                        <p>选择景点后点击「生成路线」按钮</p>
+                        <p class="text-sm mt-1">最多选择8个景点，系统将生成最优游览路线</p>
+                    </div>
+                `;
+                
+                // 隐藏摘要和预览
+                routeSummary.classList.add('hidden');
+                routeSummary.classList.remove('block');
+                routeMapPreview.classList.add('hidden');
+            });
+            
+            // 限制最多选择8个景点
+            spotCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', () => {
+                    const checkedCount = Array.from(spotCheckboxes).filter(c => c.checked).length;
+                    
+                    if (checkedCount > 8) {
+                        checkbox.checked = false;
+                        alert('最多只能选择8个景点，建议单次游览3-5个景点体验更佳！');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

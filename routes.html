@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>云游西湖</title>
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- 配色 (保持一致) --- */
+        :root {
+            --ink: #2b2b2b;
+            --paper: #f4f0e6;
+            --rouge: #b14b3d;
+            --accent-green: #5d7a76;
+            --line-color: #d1d1d1;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--paper);
+            color: var(--ink);
+            font-family: 'Noto Serif SC', serif;
+        }
+
+        a { text-decoration: none; color: inherit; }
+
+        /* --- 导航 --- */
+        nav {
+            position: fixed; top: 0; width: 100%; padding: 1.5rem 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(244, 240, 230, 0.95); z-index: 1000;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        .logo { font-family: 'Ma Shan Zheng', cursive; font-size: 1.8rem; }
+        .nav-links a { margin-left: 2rem; font-weight: bold; transition: color 0.3s; }
+        .nav-links a:hover, .nav-links a.active { color: var(--rouge); }
+
+        /* --- 页面标题区 --- */
+        .page-header {
+            padding: 8rem 5% 3rem; text-align: center;
+            background: linear-gradient(to bottom, #eef2f3, var(--paper));
+        }
+        .page-header h1 { font-family: 'Ma Shan Zheng', cursive; font-size: 3rem; margin-bottom: 1rem; }
+        
+        /* --- 路线选择 Tab --- */
+        .tabs {
+            display: flex; justify-content: center; margin-bottom: 3rem; gap: 1rem;
+        }
+        .tab-btn {
+            padding: 10px 25px; border: 1px solid var(--ink); background: transparent;
+            cursor: pointer; font-family: 'Noto Serif SC', serif; font-size: 1.1rem;
+            transition: all 0.3s;
+        }
+        .tab-btn:hover, .tab-btn.active {
+            background: var(--ink); color: var(--paper);
+        }
+
+        /* --- 路线内容容器 --- */
+        .route-container {
+            max-width: 800px; margin: 0 auto 5rem; padding: 0 20px;
+            display: none; /* 默认隐藏，JS控制显示 */
+            animation: fadeIn 0.5s ease;
+        }
+        .route-container.active { display: block; }
+
+        /* --- 垂直时间轴样式 --- */
+        .timeline {
+            position: relative; padding-left: 40px; border-left: 2px solid var(--line-color);
+        }
+
+        .stop {
+            position: relative; margin-bottom: 3rem;
+        }
+
+        /* 时间轴节点 (圆点) */
+        .stop::before {
+            content: ''; position: absolute; left: -49px; top: 5px;
+            width: 16px; height: 16px; border-radius: 50%;
+            background: var(--paper); border: 4px solid var(--accent-green);
+            transition: all 0.3s;
+        }
+        .stop:hover::before { border-color: var(--rouge); transform: scale(1.2); }
+
+        .stop-card {
+            background: #fff; padding: 1.5rem; border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.05);
+            transition: transform 0.3s;
+        }
+        .stop-card:hover { transform: translateX(10px); border-left: 4px solid var(--rouge); }
+
+        .stop-title { font-size: 1.4rem; font-weight: bold; margin-bottom: 0.5rem; color: var(--accent-green); }
+        .stop-desc { font-size: 0.95rem; color: #666; line-height: 1.6; }
+        .stop-time {
+            display: inline-block; margin-top: 10px; padding: 2px 8px;
+            background: #f0f0f0; font-size: 0.8rem; border-radius: 4px; color: #555;
+        }
+
+        /* 底部提示 */
+        .tips-box {
+            background: #fdf6ec; padding: 2rem; border-radius: 8px;
+            margin-top: 3rem; border-left: 5px solid var(--rouge);
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo">游西湖</div>
+        <div class="nav-links">
+            <a href="index.html">首页</a>
+            <a href="routes.html" class="active">游玩路线</a>
+        </div>
+    </nav>
+
+    <header class="page-header">
+        <h1>寻幽探胜</h1>
+        <p>精选三条西湖游览路线，请按需选择</p>
+    </header>
+
+    <!-- 路线切换按钮 -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="showRoute('classic')">经典环湖 (初游)</button>
+        <button class="tab-btn" onclick="showRoute('culture')">人文古迹 (深度)</button>
+        <button class="tab-btn" onclick="showRoute('leisure')">品茶休闲 (轻松)</button>
+    </div>
+
+    <!-- 路线 1: 经典环湖 -->
+    <div id="route-classic" class="route-container active">
+        <div class="timeline">
+            <div class="stop">
+                <div class="stop-card">
+                    <div class="stop-title">08:30 断桥残雪</div>
+                    <div class="stop-desc">西湖最著名的地标。清晨漫步白堤，感受“最爱湖东行不足”的意境。</div>
+                    <div class="stop-time">建议游玩：1小时</div>
+                </div>
+            </div>
+            <div class="stop">
+                <div class="stop-card">
+                    <div class="stop-title">10:00 乘船游湖</div>
+                    <div class="stop-desc">在中山公园码头乘船，前往“三潭印月”。这是欣赏西湖全景的最佳视角。</div>
+                    <div class="stop-time">建议游玩：1.5小时</div>
+                </div>
+            </div>
+            <div class="stop">
+                <div class="stop-card">
+                    <div class="stop-title">13:30 花港观鱼</div>
+                    <div class="stop-desc">午餐后前往苏堤南段，观赏红鱼池与牡丹园，体验皇室园林之趣。</div>
+                    <div class="stop-time">建议游玩：1小时</div>
+                </div>
+            </div>
+            <div class="stop">
+                <div class="stop-card">
+                    <div class="stop-title">16:00 雷峰夕照</div>
+                    <div class="stop-desc">登雷峰塔，俯瞰西湖全景。待夕阳西下，拍摄金光穿塔的绝美画面。</div>
+                    <div class="stop-time">建议游玩：1.5小时</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 路线 2: 人文古迹 -->
+    <div id="route-culture" class="route-container">
+        <div class="timeline">
+            <div class="stop">
+                <div class="stop-card">
+                    <div class="stop-title">09:00 岳王庙</div>
+                    <div class="stop-desc">祭拜民族英雄岳飞，领略“精忠报国”的浩然正气。建筑气势雄伟。</div>
+                    <div class="stop-time">建议游玩：1小时</div>
+                </div>
+            </div>
+            <div class="stop">
+                <div class="stop-card">
+                    <div class="stop-title">10:30 西冷印社</div>
+                    <div class="stop-desc">天下第一名社。园林精致，摩崖石刻众多，是金石篆刻爱好者的圣地。</div>
+                    <div class="stop-time">建议游玩：1小时</div>
+                </div>
+            </div>
+            <div class="stop">
+                <div class="stop-card">
+                    <div class="stop-title">14:00 灵隐寺 & 飞来峰</div>
+                    <div class="stop-desc">“仙灵所隐”的千年古刹。飞来峰的石刻造像更是江南石窟艺术的瑰宝。</div>
+                    <div class="stop-time">建议游玩：3小时</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 路线 3: 品茶休闲 -->
+    <div id="route-leisure" class="route-container">
+        <div class="timeline">
+            <div class="stop">
+                <div class="stop-card">
+                    <div class="stop-title">09:30 龙井问茶</div>
+                    <div class="stop-desc">前往龙井村，漫步茶园小径，空气中弥漫着茶香。</div>
+                    <div class="stop-time">建议游玩：2小时</div>
+                </div>
+            </div>
+            <div class="stop">
+                <div class="stop-card">
+                    <div class="stop-title">14:00 茅家埠</div>
+                    <div class="stop-desc">老杭州人的后花园，野趣横生，芦苇荡漾，比游人如织的主湖区更清静。</div>
+                    <div class="stop-time">建议游玩：2小时</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showRoute(routeName) {
+            // 1. 隐藏所有路线容器
+            const routes = document.querySelectorAll('.route-container');
+            routes.forEach(r => r.classList.remove('active'));
+
+            // 2. 移除所有 Tab 的激活状态
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(b => b.classList.remove('active'));
+
+            // 3. 激活选中的路线和按钮
+            document.getElementById('route-' + routeName).classList.add('active');
+            
+            // 找到点击的按钮并添加 active 类（通过 event.target 或简单的逻辑）
+            // 这里为了简单，重新查找对应的按钮
+            const indexMap = { 'classic': 0, 'culture': 1, 'leisure': 2 };
+            buttons[indexMap[routeName]].classList.add('active');
+        }
+    </script>
+</body>
+</html>
