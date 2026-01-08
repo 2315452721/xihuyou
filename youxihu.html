@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>游西湖</title>
+    <!-- 引入中式字体 -->
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- 1. 核心配色 (中国传统色) --- */
+        :root {
+            --ink: #2b2b2b;           /* 墨色 */
+            --paper: #f4f0e6;         /* 宣纸白 */
+            --rouge: #b14b3d;         /* 胭脂红 */
+            --cyan-grey: #aebaba;     /* 影青 */
+            --willow-green: #90b44b;  /* 柳染 */
+            --gold: #f2c777;          /* 琥珀 */
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background-color: var(--paper);
+            color: var(--ink);
+            font-family: 'Noto Serif SC', serif;
+            overflow-x: hidden;
+            line-height: 1.8; /* 增加行高，增强阅读舒适感 */
+        }
+
+        /* 统一效果容器 */
+        .effect-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 500;
+            overflow: hidden;
+        }
+
+        /* --- 小雨效果 --- */
+        .raindrop {
+            position: absolute;
+            width: 2px;
+            height: 15px;
+            background: linear-gradient(to bottom, rgba(174, 186, 186, 0.3), rgba(174, 186, 186, 0.6));
+            border-radius: 50% 50% 50% 50% / 100% 100% 0 0;
+            animation: fall linear infinite;
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(-15px);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.6;
+            }
+            90% {
+                opacity: 0.6;
+            }
+            100% {
+                transform: translateY(100vh);
+                opacity: 0;
+            }
+        }
+
+        /* --- 小雪效果 --- */
+        .snowflake {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            animation: snowfall linear infinite;
+        }
+
+        @keyframes snowfall {
+            0% {
+                transform: translateY(-10px) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.8;
+            }
+            90% {
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(100vh) translateX(100px);
+                opacity: 0;
+            }
+        }
+
+        /* --- 艳阳天光效 --- */
+        .sunlight {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 50%);
+            animation: sunbeam 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes sunbeam {
+            0% {
+                opacity: 0.3;
+            }
+            100% {
+                opacity: 0.6;
+            }
+        }
+
+        /* --- 枫叶飘落效果 --- */
+        .maple-leaf {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: linear-gradient(45deg, #b14b3d 0%, #f2c777 100%);
+            border-radius: 50% 0 50% 0;
+            animation: maplefall 5s ease-in-out infinite;
+        }
+
+        @keyframes maplefall {
+            0% {
+                transform: translateY(-10px) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.8;
+            }
+            90% {
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        a { text-decoration: none; color: inherit; }
+
+        /* --- 导航栏 --- */
+        nav {
+            position: fixed; top: 0; width: 100%; padding: 1.5rem 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(244, 240, 230, 0.7); backdrop-filter: blur(8px);
+            z-index: 1000; border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .logo { font-family: 'Ma Shan Zheng', cursive; font-size: 1.8rem; }
+        .nav-links a { margin-left: 2rem; font-weight: bold; transition: color 0.3s; }
+        .nav-links a:hover, .nav-links a.active { color: var(--rouge); }
+
+        /* --- Hero 首屏 (水墨意境) --- */
+        .hero {
+            height: 100vh; position: relative;
+            display: flex; align-items: center; justify-content: center; text-align: center;
+            /* 背景：模拟烟雨朦胧 */
+            background: linear-gradient(180deg, #daddd8 0%, #eef2f3 40%, #aebaba 100%);
+            overflow: hidden;
+        }
+
+        /* 远山装饰 */
+        .mountain {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 40%;
+            background: linear-gradient(to top, #7d9692 0%, transparent 100%);
+            clip-path: ellipse(150% 100% at 50% 100%); opacity: 0.6; pointer-events: none;
+        }
+
+        .hero-content {
+            position: relative; z-index: 10; padding: 4rem;
+            background: rgba(255,255,255, 0.5); backdrop-filter: blur(5px);
+            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.05);
+            animation: fadeIn 1.5s ease-out;
+        }
+
+        .hero h1 { font-family: 'Ma Shan Zheng', cursive; font-size: 4.5rem; margin-bottom: 0.5rem; }
+        .hero p { font-size: 1.2rem; letter-spacing: 4px; color: var(--rouge); margin-bottom: 2rem; }
+
+        .cta-btn {
+            padding: 12px 35px; border: 1px solid var(--ink); background: transparent;
+            color: var(--ink); font-size: 1.1rem; transition: all 0.3s;
+            font-family: 'Noto Serif SC', serif; cursor: pointer;
+        }
+        .cta-btn:hover { background: var(--ink); color: var(--paper); }
+
+        /* --- 交互1：西湖诗签 (回归) --- */
+        .poetry-section {
+            padding: 6rem 10%; text-align: center; background-color: var(--paper);
+        }
+
+        .poetry-card {
+            max-width: 500px; margin: 0 auto 2rem; padding: 4rem 2rem;
+            border: 2px solid var(--ink); position: relative;
+            background-image: radial-gradient(#ccc 1px, transparent 1px);
+            background-size: 20px 20px; /* 模拟信纸 */
+            box-shadow: 10px 10px 0 rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
+        }
+        .poetry-card:hover { transform: translateY(-5px); }
+
+        .poem-display {
+            font-family: 'Ma Shan Zheng', cursive; font-size: 2rem;
+            min-height: 100px; display: flex; flex-direction: column; justify-content: center;
+            line-height: 1.5; color: var(--ink);
+        }
+
+        .poem-author { margin-top: 1.5rem; font-size: 0.9rem; color: #666; }
+
+        /* --- 交互2：移步换景 (回归 CSS 绘图) --- */
+        .gallery-section {
+            display: flex; height: 90vh; background: #e0e0e0; overflow: hidden;
+        }
+
+        .gallery-menu {
+            width: 25%; display: flex; flex-direction: column; justify-content: center;
+            background: #fff; z-index: 10; box-shadow: 5px 0 15px rgba(0,0,0,0.05);
+        }
+
+        .menu-item {
+            padding: 2rem; cursor: pointer; font-size: 1.2rem; transition: all 0.4s;
+            border-left: 6px solid transparent; color: #888;
+            font-family: 'Ma Shan Zheng', cursive;
+        }
+        .menu-item:hover { background: #f9f9f9; color: var(--ink); }
+        .menu-item.active {
+            border-left: 6px solid var(--rouge); background: #f4f0e6;
+            color: var(--ink); font-size: 1.4rem;
+        }
+
+        .gallery-view { width: 75%; position: relative; }
+
+        /* --- CSS 风景绘图 (纯代码模拟) --- */
+        .view-pane {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0; transition: opacity 1s ease;
+            display: flex; align-items: flex-end; padding: 5rem;
+            pointer-events: none;
+        }
+        .view-pane.active { opacity: 1; pointer-events: auto; }
+
+        /* 1. 断桥残雪 */
+        .scene-snow { background: linear-gradient(to bottom, #cfd9df 0%, #e2ebf0 50%, #868f96 50%, #5d666d 100%); }
+        .scene-snow::before {
+            content: ''; position: absolute; top: 48%; left: 20%; width: 60%; height: 4%;
+            background: #fff; border-radius: 50% 50% 0 0 / 100% 100% 0 0; /* 拱桥 */
+            opacity: 0.9; box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        /* 2. 曲院风荷 */
+        .scene-lotus {
+            background: radial-gradient(circle at 80% 80%, rgba(200, 230, 200, 0.8) 0%, transparent 40%),
+                        linear-gradient(to bottom, #d9e4f5 0%, #2c5f58 100%);
+        }
+        .scene-lotus::after {
+            content: ''; position: absolute; bottom: 20%; right: 15%; width: 80px; height: 80px;
+            background: radial-gradient(circle at 30% 30%, #ffc0cb, #d63333); /* 荷花 */
+            filter: blur(15px); border-radius: 50%; opacity: 0.8;
+        }
+
+        /* 3. 雷峰夕照 */
+        .scene-sunset { background: linear-gradient(to bottom, #563f68 0%, #b85e49 40%, #gold 50%, #4a3b2a 100%); }
+        .scene-sunset::before {
+            content: ''; position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%);
+            width: 120px; height: 120px; background: #ffdb99; border-radius: 50%; /* 落日 */
+            box-shadow: 0 0 50px #ff9a9e;
+        }
+        .scene-sunset::after {
+            content: ''; position: absolute; bottom: 50%; right: 20%;
+            width: 0; height: 0; border-left: 25px solid transparent; border-right: 25px solid transparent;
+            border-bottom: 100px solid #222; opacity: 0.9; /* 塔影 */
+        }
+
+        /* 4. 柳浪闻莺 */
+        .scene-willow { background: linear-gradient(90deg, #eef2f3 0%, #8e9eab 100%); }
+        .scene-willow::before {
+            content: ''; position: absolute; top: 0; left: 10%; width: 80%; height: 60%;
+            background: repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(144, 180, 75, 0.3) 41px, rgba(144, 180, 75, 0.3) 42px);
+            mask-image: linear-gradient(to bottom, black, transparent); /* 柳丝 */
+        }
+
+        /* 场景文字描述 */
+        .pane-content {
+            background: rgba(255,255,255,0.9); padding: 2.5rem; max-width: 400px;
+            border-left: 4px solid var(--rouge);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            transform: translateY(30px); opacity: 0; transition: all 0.6s ease 0.3s;
+        }
+        .view-pane.active .pane-content { transform: translateY(0); opacity: 1; }
+
+        .pane-content h3 { font-family: 'Ma Shan Zheng', cursive; font-size: 2.2rem; margin-bottom: 0.8rem; color: var(--ink); }
+        .pane-content p { color: #555; font-size: 1rem; text-align: justify; }
+
+        /* --- Footer --- */
+        footer { background: var(--ink); color: #888; text-align: center; padding: 3rem; margin-top: auto; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <!-- 统一效果容器 -->
+    <div class="effect-container" id="effect-container"></div>
+
+    <nav>
+        <div class="logo">游西湖</div>
+        <div class="nav-links">
+            <a href="youxihu.html" class="active">西湖</a>
+            <a href="routes.html">游玩路线</a>
+			<a href="index.html">西湖旅游</a>
+        </div>
+    </nav>
+
+    <!-- Hero Header -->
+    <header class="hero">
+        <div class="mountain"></div>
+        <div class="hero-content">
+            <h1>水光潋滟晴方好</h1>
+            <p>WEST LAKE · HANGZHOU</p>
+            <br>
+            <a href="routes.html" class="cta-btn">前往规划游览路线 →</a>
+        </div>
+    </header>
+
+    <!-- 交互1: 西湖诗签 -->
+    <section class="poetry-section">
+        <p style="margin-bottom: 2rem; color: #888; font-family: 'Ma Shan Zheng', cursive; font-size: 1.2rem;">· 摇签赏景 ·</p>
+        <div class="poetry-card">
+            <div class="poem-display" id="poem-text">
+                欲把西湖比西子<br>淡妆浓抹总相宜
+            </div>
+            <div class="poem-author" id="poem-author">—— 苏轼</div>
+        </div>
+        <button class="cta-btn" onclick="generatePoem()" style="background: var(--ink); color: var(--paper);">
+            求一支西湖诗签
+        </button>
+    </section>
+
+    <!-- 交互2: 移步换景 -->
+    <section class="gallery-section">
+        <div class="gallery-menu">
+            <div class="menu-item active" onclick="changeView(0)">01. 断桥残雪 (冬)</div>
+            <div class="menu-item" onclick="changeView(1)">02. 曲院风荷 (夏)</div>
+            <div class="menu-item" onclick="changeView(2)">03. 雷峰夕照 (秋)</div>
+            <div class="menu-item" onclick="changeView(3)">04. 柳浪闻莺 (春)</div>
+        </div>
+
+        <div class="gallery-view">
+            <!-- 场景 1 -->
+            <div class="view-pane scene-snow active">
+                <div class="pane-content">
+                    <h3>断桥残雪</h3>
+                    <p>每当冬日雪霁，伫立桥头，放眼四望，山舞银蛇，原驰蜡象。桥阳面冰雪消融，阴面仍铺琼砌玉，黑白相间，宛如一幅天然的水墨画卷。</p>
+                </div>
+            </div>
+            <!-- 场景 2 -->
+            <div class="view-pane scene-lotus">
+                <div class="pane-content">
+                    <h3>曲院风荷</h3>
+                    <p>六月西湖，风光不与四时同。接天莲叶无穷碧，映日荷花别样红。清风徐来，荷香与酒香四溢，是夏日避暑赏景的绝佳去处。</p>
+                </div>
+            </div>
+            <!-- 场景 3 -->
+            <div class="view-pane scene-sunset">
+                <div class="pane-content">
+                    <h3>雷峰夕照</h3>
+                    <p>黄昏时分，落日霞光洒满塔身，金碧辉煌。塔影横空，与湖光山色交相辉映，诉说着千年的沧桑与白蛇传的浪漫传说。</p>
+                </div>
+            </div>
+             <!-- 场景 4 -->
+             <div class="view-pane scene-willow">
+                <div class="pane-content">
+                    <h3>柳浪闻莺</h3>
+                    <p>春日里，柳丝如烟，碧波荡漾。行于堤上，听黄莺在深柳丛中竞相啼鸣，只觉春意盎然，生机勃勃，令人心旷神怡。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>山外青山楼外楼 · 西湖歌舞几时休</p>
+    </footer>
+
+    <script>
+        // --- 诗签逻辑 ---
+        const poems = [
+            { text: "最爱湖东行不足<br>绿杨阴里白沙堤", author: "—— 白居易《钱塘湖春行》" },
+            { text: "接天莲叶无穷碧<br>映日荷花别样红", author: "—— 杨万里《晓出净慈寺送林子方》" },
+            { text: "黑云翻墨未遮山<br>白雨跳珠乱入船", author: "—— 苏轼《望湖楼醉书》" },
+            { text: "孤山寺北贾亭西<br>水面初平云脚低", author: "—— 白居易《钱塘湖春行》" },
+            { text: "暖风熏得游人醉<br>直把杭州作汴州", author: "—— 林升《题临安邸》" },
+            { text: "毕竟西湖六月中<br>风光不与四时同", author: "—— 杨万里《晓出净慈寺送林子方》" }
+        ];
+
+        function generatePoem() {
+            const display = document.getElementById('poem-text');
+            const author = document.getElementById('poem-author');
+            
+            // 淡出
+            display.style.opacity = 0;
+            author.style.opacity = 0;
+            display.style.transition = 'opacity 0.3s';
+            author.style.transition = 'opacity 0.3s';
+
+            setTimeout(() => {
+                // 随机选择
+                const randomPoem = poems[Math.floor(Math.random() * poems.length)];
+                display.innerHTML = randomPoem.text;
+                author.textContent = randomPoem.author;
+                
+                // 淡入
+                display.style.opacity = 1;
+                author.style.opacity = 1;
+            }, 300);
+        }
+
+        // --- 画廊切换逻辑 ---
+        const menuItems = document.querySelectorAll('.menu-item');
+        const viewPanes = document.querySelectorAll('.view-pane');
+
+        function changeView(index) {
+            // 移除激活状态
+            menuItems.forEach(item => item.classList.remove('active'));
+            viewPanes.forEach(pane => pane.classList.remove('active'));
+
+            // 激活新状态
+            menuItems[index].classList.add('active');
+            viewPanes[index].classList.add('active');
+
+            // 创建对应场景的效果
+            createSceneEffect(index);
+        }
+
+        // --- 效果管理逻辑 --- 
+        const effectContainer = document.getElementById('effect-container');
+
+        // 清除所有效果
+        function clearEffects() {
+            effectContainer.innerHTML = '';
+        }
+
+        // 创建小雨效果
+        function createRaindrops() {
+            const raindropCount = 50; // 小雨效果
+
+            for (let i = 0; i < raindropCount; i++) {
+                const raindrop = document.createElement('div');
+                raindrop.className = 'raindrop';
+                
+                // 随机位置
+                raindrop.style.left = Math.random() * 100 + '%';
+                
+                // 随机延迟和持续时间
+                const delay = Math.random() * 2;
+                const duration = 0.8 + Math.random() * 0.6;
+                
+                raindrop.style.animationDelay = delay + 's';
+                raindrop.style.animationDuration = duration + 's';
+                
+                effectContainer.appendChild(raindrop);
+            }
+        }
+
+        // 创建小雪效果
+        function createSnowflakes() {
+            const snowflakeCount = 30; // 小雪效果
+
+            for (let i = 0; i < snowflakeCount; i++) {
+                const snowflake = document.createElement('div');
+                snowflake.className = 'snowflake';
+                
+                // 随机位置
+                snowflake.style.left = Math.random() * 100 + '%';
+                
+                // 随机延迟和持续时间
+                const delay = Math.random() * 3;
+                const duration = 3 + Math.random() * 2;
+                const translateX = Math.random() * 150 - 75; // 左右飘动范围
+                
+                snowflake.style.animationDelay = delay + 's';
+                snowflake.style.animationDuration = duration + 's';
+                snowflake.style.animationTimingFunction = 'ease-in-out';
+                
+                // 自定义飘落路径
+                const animationName = `snowfall-${i}`;
+                const style = document.createElement('style');
+                style.textContent = `
+                    @keyframes ${animationName} {
+                        0% {
+                            transform: translateY(-10px) translateX(0);
+                            opacity: 0;
+                        }
+                        10% {
+                            opacity: 0.8;
+                        }
+                        50% {
+                            transform: translateY(50vh) translateX(${translateX}px);
+                            opacity: 0.8;
+                        }
+                        90% {
+                            opacity: 0.8;
+                        }
+                        100% {
+                            transform: translateY(100vh) translateX(${translateX * 2}px);
+                            opacity: 0;
+                        }
+                    }
+                `;
+                document.head.appendChild(style);
+                snowflake.style.animationName = animationName;
+                
+                effectContainer.appendChild(snowflake);
+            }
+        }
+
+        // 创建艳阳天光效
+        function createSunlight() {
+            const sunlight = document.createElement('div');
+            sunlight.className = 'sunlight';
+            effectContainer.appendChild(sunlight);
+        }
+
+        // 创建枫叶飘落效果
+        function createMapleLeaves() {
+            const leafCount = 20; // 枫叶数量
+
+            for (let i = 0; i < leafCount; i++) {
+                const leaf = document.createElement('div');
+                leaf.className = 'maple-leaf';
+                
+                // 随机位置
+                leaf.style.left = Math.random() * 100 + '%';
+                
+                // 随机延迟和持续时间
+                const delay = Math.random() * 4;
+                const duration = 4 + Math.random() * 2;
+                const translateX = Math.random() * 200 - 100; // 左右飘动范围
+                
+                leaf.style.animationDelay = delay + 's';
+                leaf.style.animationDuration = duration + 's';
+                leaf.style.animationTimingFunction = 'ease-in-out';
+                
+                // 自定义飘落路径和旋转
+                const animationName = `maplefall-${i}`;
+                const style = document.createElement('style');
+                style.textContent = `
+                    @keyframes ${animationName} {
+                        0% {
+                            transform: translateY(-10px) translateX(0) rotate(0deg);
+                            opacity: 0;
+                        }
+                        10% {
+                            opacity: 0.8;
+                        }
+                        50% {
+                            transform: translateY(50vh) translateX(${translateX}px) rotate(180deg);
+                            opacity: 0.8;
+                        }
+                        90% {
+                            opacity: 0.8;
+                        }
+                        100% {
+                            transform: translateY(100vh) translateX(${translateX * 1.5}px) rotate(360deg);
+                            opacity: 0;
+                        }
+                    }
+                `;
+                document.head.appendChild(style);
+                leaf.style.animationName = animationName;
+                
+                effectContainer.appendChild(leaf);
+            }
+        }
+
+        // 根据场景索引创建对应效果
+        function createSceneEffect(index) {
+            clearEffects();
+            
+            switch(index) {
+                case 0: // 断桥残雪 - 小雪
+                    createSnowflakes();
+                    break;
+                case 1: // 曲院风荷 - 艳阳天
+                    createSunlight();
+                    break;
+                case 2: // 雷峰夕照 - 枫叶飘落
+                    createMapleLeaves();
+                    break;
+                case 3: // 柳浪闻莺 - 小雨
+                    createRaindrops();
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        // 页面加载时默认显示第一个场景的效果
+        window.addEventListener('load', () => {
+            createSceneEffect(0);
+        });
+    </script>
+</body>
+</html>
